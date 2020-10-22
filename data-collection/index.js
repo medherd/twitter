@@ -1,5 +1,4 @@
 /*global require console Promise */
-
 const Twit = require("twit");
 const yargs = require("yargs");
 const config = require("./config");
@@ -12,6 +11,12 @@ const args = yargs
     description: "Search query",
     type: "string",
   })
+  .option("user", {
+    alias: "u",
+    description: "A user account",
+    type: "boolean",
+    default: false,
+  })
   .option("max", {
     alias: "m",
     description: "Maximum number of tweets to get",
@@ -23,6 +28,7 @@ const args = yargs
 
 const query = args.query;
 const max = args.max;
+const isUser = args.user;
 
 const twit = new Twit({
   consumer_key: config.apiKey,
@@ -46,7 +52,14 @@ const getUserID = async (screen_name) => {
 (async () => {
   try {
     console.log("\nQuery: ", query);
-    const userID = await getUserID(query);
+
+    let userID;
+    if (isUser) {
+      console.log(">> User account identified");
+      userID = await getUserID(query);
+    } else {
+      userID = null;
+    }
 
     let count = 0;
     let maxId;
@@ -73,34 +86,39 @@ const getUserID = async (screen_name) => {
     /* eslint-disable no-await-in-loop */
     while (continueLoop) {
       if (maxId) options.max_id = maxId;
+      try {
+        const { data } = await twit.get("search/tweets", options);
+        const { statuses } = data;
 
-      const { data } = await twit.get("search/tweets", options);
-      const { statuses } = data;
+        if (!statuses.length) {
+          console.log("Reached Max @ ", count);
+          continueLoop = false;
+          break;
+        }
 
-      if (!statuses.length) {
-        console.log("Reached Max @ ", count);
-        continueLoop = false;
+        const tweets = utils.refineTweets(statuses);
+        const lastTweetId = tweets[tweets.length - 1].id;
+        maxId = lastTweetId;
+
+        if (
+          allTweets.length &&
+          allTweets[allTweets.length - 1].id === lastTweetId
+        ) {
+          console.log("Tweets are now repeating...");
+          continueLoop = false;
+          break;
+        } else {
+          console.log("Adding latest batch...");
+          allTweets = [...allTweets, ...tweets];
+        }
+
+        console.log(">> Cycle completed: ", count + 100);
+        count = count + 100;
+      } catch (error) {
+        console.log("Error: ", error);
+        console.log(">> An error occurred, break the while loop");
         break;
       }
-
-      const tweets = utils.refineTweets(statuses);
-      const lastTweetId = tweets[tweets.length - 1].id;
-      maxId = lastTweetId;
-
-      if (
-        allTweets.length &&
-        allTweets[allTweets.length - 1].id === lastTweetId
-      ) {
-        console.log("Tweets are now repeating...");
-        continueLoop = false;
-        break;
-      } else {
-        console.log("Adding latest batch...");
-        allTweets = [...allTweets, ...tweets];
-      }
-
-      console.log(">> Cycle completed: ", count + 100);
-      count = count + 100;
     }
 
     console.log("\n>> Loop finished");

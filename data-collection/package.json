@@ -2,7 +2,8 @@
     "name": "data-collection",
     "description": "Twitter data collection process",
     "scripts": {
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "start": "export GOOGLE_APPLICATION_CREDENTIALS=../service-accounts/prod-service-account.json"
     },
     "engines": {
         "node": "10"

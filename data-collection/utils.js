@@ -81,7 +81,7 @@ const refineTweet = (status) => {
     source: status.source,
     reply_count: status.reply_count,
     retweet_count: status.retweet_count,
-    favourite_count: status.favourite_count,
+    favorite_count: status.favorite_count,
     retweeted: status.retweeted,
     in_reply_to_status_id_str: status.in_reply_to_status_id_str,
     in_reply_to_user_id_str: status.in_reply_to_user_id_str,
@@ -176,12 +176,13 @@ exports.analyzeSentiment = async (text) => {
  */
 exports.deleteFile = async (filename) => {
   const deleteOp = util.promisify(fs.unlink);
-  console.log(`Delete ${filename} if it exists...`);
+  console.log(`Deleting ${filename}...`);
   await deleteOp(filename).catch((error) => {
     if (error.code === "ENOENT") {
-      console.log(`File ${filename} does not exist.`);
+      console.log(`File ${filename} does not exist...`);
     }
   });
+  console.log(`Deleted existing ${filename}`);
   console.log("\n");
 };
 
@@ -191,7 +192,7 @@ exports.deleteFile = async (filename) => {
  */
 exports.genFilePath = (query) => {
   const filename = `${query.split(" ").join("_")}`;
-  return `./data/${filename}.csv`;
+  return `../analysis/data/${filename}.csv`;
 };
 
 /**
